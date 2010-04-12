@@ -179,8 +179,6 @@ module Pretty (
   ) where
 
 
-import GlaExts 
-
 infixl 6 <> 
 infixl 6 <+>
 infixl 5 $$, $+$

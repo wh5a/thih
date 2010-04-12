@@ -7,14 +7,6 @@ import HsParseMonad
 import HsLexer
 import HsParseUtils
 
-#ifdef __HUGS__
-{-
-#endif
-import GlaExts
-#ifdef __HUGS__
--}
-#endif
-
 data HappyAbsSyn 
 	= HappyTerminal Token
 	| HappyErrorToken Int

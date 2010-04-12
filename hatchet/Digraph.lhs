@@ -37,7 +37,8 @@ module Digraph(
 -- import Util	( sortLt )
 
 -- Extensions
-import ST
+import Control.Monad.ST
+import GHC.Arr
 
 -- std interfaces
 import Maybe
