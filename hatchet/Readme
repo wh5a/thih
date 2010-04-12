@@ -1,0 +1,51 @@
+Readme file for Hatchet version 0.1
+-----------------------------------
+
+General
+-------
+
+Hatchet is a type checking and inference tool for 
+Haskell 98. It currently lives at
+http://www.cs.mu.oz.au/~bjpop/hatchet.html
+
+It was derived in part from "Typing Haskell in Haskell"
+by Mark Jones (http://www.cse.ogi.edu/~mpj/thih/). See
+the file Readme.thih for information about that project.
+
+See the file Contributors for a list of people that 
+have contributed to the Hatchet project.
+
+Copyright and License
+---------------------
+
+Hatchet is derived from a number of different program
+sources. The copyright for each is described in the
+header for each such source. Please read the file
+License for a description of the license details for
+Hatchet.
+
+Building from Source
+--------------------
+
+Hatchet requires ghc version 5.02 or higher. A Makefile
+is provided for building the project, simply run the
+commands:
+
+   make depend
+   make
+
+in the same directory as the Hatchet
+source. The executable will by default be called "tc".
+
+Usage
+-----
+
+To print the types of all top-level and let/where bound
+identifiers in a module:
+
+./tc -d types Foo.hs
+
+Further Documentation
+---------------------
+
+See the file Hatchet.ps in the directory "docs".

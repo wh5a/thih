@@ -1,0 +1,451 @@
+\documentclass{article}
+\usepackage{url}
+\begin{document}
+
+\title{Hatchet \\ 
+A Type Checking and Inference Tool for Haskell 98\\
+Version 0.1}
+\author{Bernie Pope, bjpop@cs.mu.oz.au}
+\date{2002}
+
+\maketitle
+
+\section{Introduction}
+
+Hatchet is a type checking and inference tool for 
+Haskell 98, written in (almost) 
+Haskell 98.\footnote{Hereafter referred to as Haskell.}
+This document is an attempt to describe what Hatchet is, 
+what it is not, and briefly how it works.
+
+\section{Manifesto}
+
+Types are fundamental in Haskell. If you want to manipulate
+Haskell programs (and fragments) then you must be able to
+find and check the types from the text of the code. Hatchet is
+intended to be a tool for that very purpose.
+
+Haskell has a static type system. This means that types 
+are dealt with completely at compile time; consequently
+there is no type checking during program execution. Haskell's
+type system has foundations in the Hindley Milner system, 
+though it involves type-checking as well as inference and it is
+extended with a system of constraints for handling 
+type classes. 
+
+The authoritative definition of Haskell is the
+Language Report. Unfortunately the Report only gives an
+informal treatment of the type system. How then does one reason
+about the types in their programs? The usual approach is to
+ask a compiler to compile the program. If there are any type
+errors the compiler will hopefully report them. If there
+are no type errors, then one might ask for the compiler to
+report the types of certain entities. 
+
+The problem with this approach is that compilers are complicated systems 
+that have to deal with more than just the static properties
+of programs. It was found to be quite difficult to remove the
+type checkers from the front of any of the existing Haskell
+implementations. Furthermore, the type systems of all 
+existing implementations are different, particularly with respect
+to extensions of the language beyond what is prescribed in the
+Report.
+
+Mark Jones provides one possible interpretation of the Haskell
+type system in his work \emph{Typing Haskell in Haskell}. 
+The kernel of a typing system for Haskell written in Haskell
+accompanies that work. Hatchet is based on that kernel.
+
+Hatchet is supposed to be as simple as possible, particularly
+so that it can be understood and used by mortals. Simplicity
+comes at a price. Hatchet is not particularly fast and it doesn't
+have particularly good error messages (for the moment).
+It is not really designed for experimentation with type systems;
+it might be possible to use it in that way, but that is not a
+design goal. The target application is type directed 
+program transformation and manipulation (in which you know you
+have a type correct program, but you don't already know what all
+the types are).
+
+Lastly Hatchet is not in any way intended to be a definition of
+the Haskell type system. Version 0.1 is certainly incomplete,
+and most likely \emph{wrong} in some circumstances. Hopefully that 
+future versions will be less wrong. 
+
+\section{Building Hatchet from Source}
+
+\begin{enumerate}
+\item Download the source from the Hatchet web page: 
+\begin{verbatim}
+www.cs.mu.oz.au/~bjpop/hatchet.html
+\end{verbatim}
+\item Untar and unzip the source bundle into a directory,
+\item \texttt{make depend}
+\item \texttt{make}
+\end{enumerate}
+
+You will need ghc. By default this will create an executable called
+\texttt{hatch}. It ought to work with nhc, but this is yet to be tested.
+Hugs seems to choke at various points. 
+
+\section{Usage}
+
+When given the filename of a Haskell module, Hatchet will print the types
+or all top-level and let/where bound variables in the module to the standard
+output:
+\begin{verbatim}
+   ./hatch Foo.hs
+\end{verbatim}
+Alternative information must be requested more explicitly, such as:
+\begin{verbatim}
+   ./hatch -d kinds Foo.hs
+\end{verbatim}
+Hatchet has a number of other command line arguments. To see what is
+available and what they do:
+\begin{verbatim}
+   ./hatch -h 
+\end{verbatim}
+
+
+\section{Features}
+
+Hatchet can tell you a lot of information about your Haskell module.
+In particular it can provide:
+
+\begin{itemize}
+\item the parse tree of the module, 
+\item the source location and type of binding environment
+      for every identifier,
+\item the dependency graph of all top-level identifiers,
+\item the kind of all type constructors and class parameters,
+\item the class hierarchy, including superclass relationships,
+      known instances, and method signatures,
+\item the type of every data constructor, and
+\item the type of every top-level and let/where bound identifier
+\end{itemize}
+
+\section{Missing Features}
+
+Version 0.1 is intended as a hacker's release. There are a number of
+missing features, the most significant are:
+
+\begin{itemize}
+\item full support for multi-module programs,
+\item user defined and instantiated classes, and
+\item record syntax 
+\end{itemize}
+
+Basically version 0.1 of hatchet can type single module 
+programs that make use of the standard Prelude. Future versions
+should rectify these shortcomings.
+
+\section{Structure/Design}
+
+In this section the design of Hatchet is described as a series 
+of tasks that are performed (in order) and relate each task to
+the most significant modules in the Hatchet source. This is
+a rough guide, and for simplicity certain details are
+not mentioned.
+
+\begin{enumerate}
+\item command line options 
+     \begin{description}
+     \item[modules] \texttt{Opts}, \texttt{GetOpt}
+     \end{description}
+\item lexing and parsing
+     \begin{description}
+     \item[modules] \texttt{HsLexer}, \texttt{HsParser.ly/hs}, 
+                    \texttt{HsParseMonad}, \texttt{HsParseUtils}, 
+                    \texttt{HsSyn}, \texttt{HsParsePostProcess}
+     \item[notes] Due to peculiarities in the definition of Haskell,
+                  the abstract syntax that results from the parser is 
+                  not entirely accurate, and will require re-structuring
+                  in some circumstances, this relates primarily to
+                  infix applications and multi-equation functions.
+     \end{description}
+\item syntax conversion 
+     \begin{description}
+     \item[modules] \texttt{SynConvert}, \texttt{AnnotatedSyntax}
+     \item[notes] The abstract syntax description
+                  obtained after parsing is converted into a slightly more liberal
+                  representation that allows qualified identifiers
+                  everywhere - this simplifies renaming later. It would
+                  be better to use just the one abstract syntax, rather
+                  than two, but the maintainers of \texttt{HsSyn} have 
+                  decided not to allow qualified names everywhere in
+                  accordance with the Language Report. The resulting
+                  \emph{annotated} syntax is therefore unlikely to remain
+                  within the strict confines of Haskell 98. 
+     \end{description}
+\item initial type environment construction 
+     \begin{description}
+     \item[modules] \texttt{MultiModule}, \texttt{MultiModuleBasics},
+                    \texttt{HaskellPrelude}
+     \item[notes] This is not quite complete. The interface
+                  files for any modules that the current one depends
+                  upon are read. This presumes that they have been type-checked
+                  previously. The topological ordering of modules is not
+                  implemented by Hatchet and is presumed to be done
+                  by someone else (perhaps hmake?). A type environment
+                  is composed from the information in the interface files
+                  and a default environment for the Prelude.
+     \end{description}
+\item module deconstruction 
+     \begin{description}
+     \item[modules] \texttt{TidyModule}
+     \item[notes] The abstract syntax is broken into separate components.
+                  For example, all the variable declarations are collected
+                  together, and all the data declarations together, and 
+                  so on. 
+     \end{description}
+\item desugaring 
+     \begin{description}
+     \item[modules] \texttt{Desugar}
+     \item[notes] Pattern bindings are simplified, so for example:
+\begin{verbatim}
+(x,y,z) = foo
+\end{verbatim}
+                  becomes:
+\begin{verbatim}
+newRhs = foo
+x = (\(a, _, _) -> a) newRhs
+y = (\(_, a, _) -> a) newRhs
+z = (\(_, _, a) -> a) newRhs
+\end{verbatim}
+                 Type synonyms are removed completely. Do notation is
+                 converted into expression form. 
+                 Expressions with type annotations are converted to
+                 let expressions following the Language Report:
+\begin{verbatim}
+e :: t
+\end{verbatim}
+                  becomes:
+\begin{verbatim}
+let {v :: t, v = e} in v
+\end{verbatim}
+                 Desugaring tends to
+                 simplify the task of type inference because it reduces
+                 the number of cases that need to be considered. However,
+                 it changes the structure of the program, and in some 
+                 cases introduces new identifiers into the program. 
+                 One design goal of Hatchet is to minimise the amount
+                 of desugaring that is performed.
+     \end{description}
+\item renaming 
+     \begin{description}
+     \item[modules] \texttt{Rename}
+     \item[notes] Every variable identifier (values and types) in the 
+                  module is uniquely renamed and
+                  qualified to its module of origin. This simplifies the
+                treatment of variable scope and allows multiple variables
+                of a given (original) name to exist in the type environment
+                at the same time. This is particularly useful since we 
+                collect the types of let and where bound identifiers
+                as well as top-level identfiers and so we must be
+                prepared for overlapping scopes.
+                The renaming scheme is simple: a unique
+                integer is prepended on the front of each occurrence of
+                a given identifier. This facilitates the simple retrieval
+                of the original name and also indicates which names have
+                been renamed and which haven't (numerals are not allowed
+                to start an identifier in Haskell, so any name with numerals
+                at the front must have been renamed, otherwise it would
+                have been rejected by the parser). Type constructors and
+                data constructors and class names are not renamed 
+                however they are qualified to their module of origin.
+     \end{description}
+\item infix patching 
+     \begin{description}
+     \item[modules] \texttt{Infix}
+     \item[notes] The parsing of Haskell is complicated by the presence
+                of infix rules. Correct parsing of an expression depends on the 
+                associativity and binding power of any identifiers
+                involved in the expression. The result is that you cannot
+                always correctly parse a Haskell module without knowing
+                the fixities of imported identifiers. Knowing the fixities
+                would entail at least a partial parsing of imported modules.
+                The parser used in Hatchet (\texttt{HsParser}) presumes
+                that all infix applications can be parsed left-to-right and
+                that infix applications might require later re-structuring.
+                This seems like a simple approach. All infix rules from
+                imported modules are collected with the infix rules for the
+                current module and then the abstract syntax is re-structured
+                based on those rules where infix applications occur.
+     \end{description}
+\item kind inference 
+     \begin{description}
+     \item[modules] \texttt{KindInference}, \texttt{DependAnalysis}, \texttt{Digraph}
+     \item[notes] Kind inference is performed for all type constructors and classes.
+                  Inference is not needed for type synonyms because by this stage they
+                  have been removed. 
+     \end{description}
+\item data constructor types 
+     \begin{description}
+     \item[modules] \texttt{DataConsAssump}
+     \item[notes] The type assumptions for all data constructors are collected. They
+                  will be needed during type inference. Collecting types
+                  of data constructors is straightforward.
+     \end{description}
+\item class hierarchy construction 
+     \begin{description}
+     \item[modules] \texttt{Class}
+     \item[notes] This is incomplete. The idea is to update the class hierarchy
+                  with new classes and instance declarations. The existing class
+                  hierarchy comes from imported modules and the Prelude.
+     \end{description}
+\item dependency analysis 
+     \begin{description}
+     \item[modules] \texttt{DependAnalysis}, \texttt{DeclsDepends}, \texttt{Digraph}
+     \item[notes] This is just dependency analysis for top-level variable declarations.
+                  Further dependency analysis will be required when the types of local
+                  declarations are computed. 
+      \end{description}
+\item type inference and checking 
+     \begin{description}
+     \item[modules] \texttt{TIMain}, \texttt{TIMonad}, \texttt{Representation},
+     \texttt{Type}, \texttt{Class}
+     \item[notes] Finally the types of all top-level and let/where bound
+                  identifiers are computed. This is based on the type-checking
+                  kernel from \emph{Typing Haskell in Haskell}. Types are 
+                  collected in an environment which is threaded through the
+                  computation. 
+     \end{description}
+\item interface file writing 
+     \begin{description}
+     \item[modules] \texttt{MultiModule}, \texttt{MultiModuleBasics}
+     \item[notes] Module specific information about types, kinds, classes,
+                 infix rules, and type synonyms
+                  are written to an intermediate file. The default behaviour
+                  is not to create an intermediate file unless the \texttt{-i}
+                command is supplied. When an intermediate file is required for
+                a module called \texttt{Foo}, the default intermediate filename
+                is \texttt{Foo.ti}, however an alternative name is allowed
+                as an argument to the \texttt{-i} flag. The writing of intermediate
+                files is inefficient and incomplete. 
+     \end{description}
+\end{enumerate}
+
+\section{Divergence from Typing Haskell in Haskell}
+
+The typing algorithm in Mark Jones' \emph{Typing Haskell 
+in Haskell} requires the program to be decomposed into 
+groups of mutually recursive functions. Each group of such
+functions is further divided into explicitly typed and
+implicitly typed function bindings. It is possible to 
+further sub-divide the implicitly typed functions into
+smaller dependency groups. Hatchet does not do this
+further sub-division. So for example, the following 
+program can be typed according to the rules of 
+\emph{Typing Haskell in Haskell} but not by Hatchet:
+
+\begin{verbatim}
+f :: a -> b
+f x = g True
+g y = h True
+h z = f True
+foo = h () 
+\end{verbatim}
+
+Hugs accepts this program, but ghc does not.
+
+\section{Known Bugs}
+
+\begin{itemize}
+\item Modules which explcitly \texttt{import Prelude} will fail. A fix for
+      this will come when multi-module programs are supported properly.
+\item Locally bound variables (let and where) will sometimes have their
+      types printed incorrectly:
+\begin{verbatim}       
+foo = True
+    where
+    x = 2
+\end{verbatim}
+      For the above program, Hatchet will report:
+\begin{verbatim}       
+Main.1_foo :: Bool
+Main.2_x :: a
+\end{verbatim}
+      This is due to the way that constraints are handled for
+      locally bound variables. 
+\end{itemize}
+
+\section{The future of Hatchet}
+
+There is much work to be done. Who is going to do it? Hopefully
+Hatchet will be useful to people in the Haskell community, and
+hopefully it will be improved by those people who use it. 
+
+Some code restructuring might take place if and when the Haskell library
+hierarchies are standardised and implemented by compilers.
+
+It would be nice to make Hatchet more like a library and less like
+a stand-alone program. Unfortunately, Haskell is a difficult language to
+deal with in fragments, it just doesn't look like it was desgined
+with meta-programming in mind. 
+
+It would be nice to try and apply some software engineering principles
+to the development of Hatchet. In particular there are a lot of 
+passes over the syntax tree. This code is tedious to write and maintain.
+Perhaps something like \emph{Strafunski} can help? Any volunteers?
+
+Hatchet also needs documentation and test cases (both positive and negative).
+A small amount of testing has been done, but there will never be enough.
+Bug reports and patches should be sent to Bernie \url{bjpop@cs.mu.oz.au},
+who will do his best with limited time to fix and apply them.
+If you are a keen Haskell programmer and have some spare time
+please jump in and start improving Hatchet.
+
+\section{License, copyright and credits}
+
+Hatchet version 0.1 is derived from a number of sources
+each with their own copyright and license restrictions.
+See each file in the source distribution for more 
+information.
+
+Special license and copyright information for all work
+derived directly and indirectly from \emph{Typing Haskell
+in Haskell} by 
+Mark Jones\footnote{\url{http://www.cse.ogi.edu/~mpj/thih/}}
+is provided in the file \texttt{License.thih}. Please read
+that file carefully and abide by its contents.
+
+Hatchet is free software. Permission is granted to
+all good life-forms and machines to use and distribute
+it in whole or part, as source or binary, modified or
+unmodified, for any purpose providing the Licenses
+and Copyrights of the component sources are also
+respected and followed.
+
+The following people have contributed to Hatchet:
+\begin{itemize}
+\item Bernie Pope     
+\item Bryn Humberstone
+\item Toby Ord
+\item Lindsay Powles
+\item Robert Shelton
+\end{itemize}
+
+Hatchet has derived much benefit from the work of 
+many others including:
+
+\begin{itemize}
+\item Mark Jones         (Typing Haskell in Haskell) 
+\item Manuel Chakravarty (FiniteMaps) 
+\item Sven Panne         (GetOpt) 
+\item Graham Hutton      (ParseLib) 
+\item Erik Meijer        (ParseLib) 
+\item The GHC team       (Digraph, Haskell Parsing and Pretty Printing)
+\end{itemize}
+
+Thankyou to all those involved.
+
+\section{References}
+
+\begin{itemize}
+\item Mark Jones, \emph{Typing Haskell in Haskell}, \url{http://www.cse.ogi.edu/~mpj/thih}
+\item The Haskell 98 Language Report, \url{http://www.haskell.org/onlinereport}
+\item The Glasgow Haskell Compiler, \url{http://haskell.cs.yale.edu/ghc}
+\item Strafunski, \url{http://www.cs.vu.nl/Strafunski}
+\end{itemize}
+
+\end{document}

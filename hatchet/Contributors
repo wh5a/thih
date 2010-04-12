@@ -1,0 +1,22 @@
+The following people have contributed to Hatchet:
+-------------------------------------------------
+
+Bernie Pope             (bjpop@cs.mu.oz.au)
+Bryn Humberstone
+Toby Ord
+Lindsay Powles
+Robert Shelton
+
+Hatchet has derived benefit from the work of many others including:
+-------------------------------------------------------------------
+
+Mark Jones         (Typing Haskell in Haskell)
+Manuel Chakravarty (FiniteMaps)
+Sven Panne         (GetOpt)
+Graham Hutton      (ParseLib)
+Erik Meijer        (ParseLib)
+The GHC team       (Digraph, Haskell Parsing and Pretty Printing)
+
+
+
+Thankyou to all those involved.

@@ -1,0 +1,22 @@
+Hatchet version 0.1 is derived from a number of sources 
+each with their own Copyright and License restrictions. 
+See each file for the respective Copyright and
+License information.
+
+Special License and Copyright information for all work
+derived directly and indirectly from "Typing Haskell
+in Haskell" by Mark Jones (http://www.cse.ogi.edu/~mpj/thih/)
+is provided in the file "License.thih". Please read 
+that file carefully and abide by its contents.
+
+Hatchet is free software. Permission is granted to
+all good lifeforms and machines to use and distribute 
+it in whole or part, as source or binary, modified or 
+unmodified, for any purpose providing the Licenses 
+and Copyrights of the component sources are also 
+respected and followed.
+
+No warranty for any aspect of this software is 
+provided, neither explicitly nor implicitly,
+by anyone anywhere anyhow at any time past, present
+or future.
